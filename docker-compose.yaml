@@ -1,0 +1,22 @@
+version: '3.9'
+services:
+  web:	
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./node:/usr/src/node
+    ports:
+      - "51001:51001"
+    tty: true
+    stdin_open: true
+
+  db:
+    image: mysql:8.0
+    volumes:
+      - ./data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: todosql
+      MYSQL_DATABASE: todo
+    tty: true
+    stdin_open: true
