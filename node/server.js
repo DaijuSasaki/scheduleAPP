@@ -20,16 +20,16 @@ app.get('/api/get', (req, res) => {
     const memberIds = req.query.ids
     let sql
     if(dates === undefined && memberIds !== undefined) {
-	sql = mysql.format(`SELECT date,CONCAT(id) id,content FROM schedule WHERE id IN(?);`,[memberIds])
+	sql = mysql.format(`SELECT date,CONCAT(id) id,content FROM schedule WHERE id IN(?) ORDER BY date;`,[memberIds])
     }
     else if(dates !== undefined && memberIds === undefined) {
-	sql = mysql.format(`SELECT date,CONCAT(id) id,content FROM schedule WHERE date IN (?);`,[dates])
+	sql = mysql.format(`SELECT date,CONCAT(id) id,content FROM schedule WHERE date IN (?) ORDER BY date;`,[dates])
     }
     else if(dates === undefined && memberIds === undefined) {
-	sql = mysql.format(`SELECT date,CONCAT(id) id,content FROM schedule;`)
+	sql = mysql.format(`SELECT date,CONCAT(id) id,content FROM schedule ORDER BY date;`)
     }
     else {
-	sql = mysql.format(`SELECT date,CONCAT(id) id,content FROM schedule WHERE date IN (?) AND id IN(?);`,[dates,memberIds])
+	sql = mysql.format(`SELECT date,CONCAT(id) id,content FROM schedule WHERE date IN (?) AND id IN(?) ORDER BY date;`,[dates,memberIds])
     }
     console.log(sql)
     db.query(sql, (err, result, fields) => {
@@ -47,9 +47,8 @@ app.get('/api/get', (req, res) => {
 app.post('/app/del', (req, res) => {
     const date = req.body.date
     const memberId = req.body.id
-    const content = req.body.content
-    const testSql = mysql.format('SELECT * FROM schedule WHERE date=? AND id=? AND content=?;', [date, memberId, content])
-    const sql = mysql.format('DELETE FROM schedule WHERE date=? AND id=? AND content=?;', [date, memberId, content])
+    const testSql = mysql.format('SELECT * FROM schedule WHERE date=? AND id=?;', [date, memberId])
+    const sql = mysql.format('DELETE FROM schedule WHERE date=? AND id=?;', [date, memberId])
     console.log(testSql)
     db.query(testSql, (err, result1) => {
 	if(err) {
@@ -77,9 +76,13 @@ app.post('/app/del', (req, res) => {
 app.post('/app/put', (req, res) => {
     const date = req.body.date
     const memberId = req.body.id
-    const content = req.body.content
-    const testSql = mysql.format('SELECT * FROM schedule WHERE date=? AND id=? AND content=?;', [date, memberId, content])
-    const sql = mysql.format('INSERT INTO schedule values(?, ?, ?);', [date, memberId, content])
+    let content = req.body.content.replace(/_/g,'');
+    if(date === undefined || memberId === undefined || content === undefined) {
+	res.json({status: false, msg: '値が足りない'})
+	return
+    }
+    const testSql = mysql.format('SELECT * FROM schedule WHERE date=? AND id=?;', [date, memberId])
+    let sql;
     console.log(testSql)
     db.query(testSql, (err, result1) => {
 	if(err) {
@@ -88,9 +91,11 @@ app.post('/app/put', (req, res) => {
 	    return
 	}
 	if(result1.length !== 0) {
-	    console.log("もうすでに存在する")
-	    res.json({status: false, msg: "もうすでに存在する"})
-	    return
+	    content = '_' + content
+	    sql = mysql.format('UPDATE schedule SET content = CONCAT(IFNULL(content, ""), IFNULL(?, "")) WHERE date=? AND id=?;', [content, date, memberId])
+	}
+	else {
+	    sql =  mysql.format('INSERT INTO schedule values(?, ?, ?);', [date, memberId, content])
 	}
 	console.log(sql)
 	db.query(sql, (err, result2) => {
