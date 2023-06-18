@@ -1,6 +1,5 @@
 <b>scheduleアプリケーション</b><br>
-日付とidと内容でスケージュール組んでmysqlサーバーになげるWebアプリケーション
-db<br>
+日付とidと内容でスケージュール組んでmysqlサーバーになげるWebアプリケーション<br>
 dbに入る<br>
 $ mysql -u root -p<br>
 パスワードtodosqlを入力<br>
